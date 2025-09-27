@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผลิต2 - ระบบจัดการข้อมูลการผลิต v18</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .form-section {
+            background-color: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+            white-space: nowrap;
+        }
+        thead {
+            background-color: #f9fafb;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        input, select {
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            padding: 8px 12px;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #bfdbfe;
+        }
+        input:read-only {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
+        .btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+         .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .metric-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">ผลิต2 - ระบบจัดการข้อมูล</h1>
+            <p class="text-gray-500">เว็บแอปสำหรับบันทึกและติดตามข้อมูลการผลิต (v18)</p>
+        </header>
+
+        <nav class="flex flex-wrap border-b border-gray-200 mb-6">
+            <button class="tab-button py-3 px-5 text-gray-600 border-b-2 border-transparent font-medium active" onclick="showPage('dashboard')">แดชบอร์ด</button>
+            <button class="tab-button py-3 px-5 text-gray-600 border-b-2 border-transparent font-medium" onclick="showPage('production')">ข้อมูลการผลิต</button>
+            <button class="tab-button py-3 px-5 text-gray-600 border-b-2 border-transparent font-medium" onclick="showPage('usage')">ผลิต1 นำไปใช้</button>
+            <button class="tab-button py-3 px-5 text-gray-600 border-b-2 border-transparent font-medium" onclick="showPage('foodStock')">สต๊อกอาหาร</button>
+            <button class="tab-button py-3 px-5 text-gray-600 border-b-2 border-transparent font-medium" onclick="showPage('chemStock')">สต๊อกสาร</button>
+            <button class="tab-button py-3 px-5 text-gray-600 border-b-2 border-transparent font-medium" onclick="showPage('ingredientStock')">สต๊อกส่วนประกอบ</button>
+        </nav>
+
+        <main>
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page active">
+                 <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">สรุปข้อมูลรวม</h2>
+                    <div class="flex space-x-2">
+                        <button id="dashboard-filter-today" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">วันนี้</button>
+                        <button id="dashboard-filter-month" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">เดือนนี้</button>
+                        <button id="dashboard-filter-year" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">ปีนี้</button>
+                        <button id="dashboard-filter-all" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">ทั้งหมด</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="metric-card col-span-1 md:col-span-2 lg:col-span-4">
+                        <h3 class="text-lg font-medium text-gray-500">อาหารที่ผลิตทั้งหมด</h3>
+                        <p id="dashboard-total-liters" class="text-4xl font-bold text-blue-600 mt-2">0.00 ลิตร</p>
+                    </div>
+
+                    <div class="metric-card">
+                        <h3 class="text-lg font-medium text-gray-500">ขวด 4 ออนซ์</h3>
+                        <p id="dashboard-bottle-4oz" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3 class="text-lg font-medium text-gray-500">ขวด 8 ออนซ์</h3>
+                        <p id="dashboard-bottle-8oz" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3 class="text-lg font-medium text-gray-500">ขวด 16 ออนซ์</h3>
+                        <p id="dashboard-bottle-16oz" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                     <div class="metric-card">
+                        <h3 class="text-lg font-medium text-gray-500">ขวด 24 ออนซ์</h3>
+                        <p id="dashboard-bottle-24oz" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3 class="text-lg font-medium text-gray-500">ถุง</h3>
+                        <p id="dashboard-bags" class="text-3xl font-bold text-gray-800 mt-2">0</p>
+                    </div>
+                    <div class="metric-card col-span-1 md:col-span-2 lg:col-span-2">
+                        <h3 class="text-lg font-medium text-gray-500">ข้อมูลการล้าง</h3>
+                         <div class="grid grid-cols-3 gap-4 mt-4 text-left">
+                            <div class="text-center"><strong>ขวด:</strong> <span id="dashboard-wash-bottles">0</span> ตะกร้า</div>
+                            <div class="text-center"><strong>ฝา:</strong> <span id="dashboard-wash-lids">0</span> ครั้ง</div>
+                            <div class="text-center"><strong>เพลท:</strong> <span id="dashboard-wash-plates">0</span> ตะกร้า</div>
+                        </div>
+                    </div>
+                     <div class="metric-card col-span-1 md:col-span-2 lg:col-span-3">
+                        <h3 class="text-lg font-medium text-gray-500">ข้อมูลการนึ่ง</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-sm">
+                            <span>หม้อใหญ่(อาหาร): <strong id="dashboard-steam-large-food">0</strong></span> 
+                            <span>หม้อเล็ก(อาหาร): <strong id="dashboard-steam-small-food">0</strong></span>
+                            <span>หม้อใหญ่(เพลท): <strong id="dashboard-steam-large-plate">0</strong></span>
+                            <span>หม้อเล็ก(เพลท): <strong id="dashboard-steam-small-plate">0</strong></span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <h3 class="text-lg font-medium text-gray-500">แก๊สที่ใช้ไป (ถัง)</h3>
+                        <p id="dashboard-gas-used" class="text-3xl font-bold text-gray-800 mt-2">0.00</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Production Page -->
+            <div id="production" class="page">
+                <form id="production-form">
+                    <input type="hidden" name="editingId" id="editingProductionId">
+                    <!-- Section 1 -->
+                    <div class="form-section">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-700">ข้อมูลการผลิตทั่วไป</h3>
+                        <input type="date" name="date" class="w-full mb-4" required>
+                        
+                        <div id="production-item-entries" class="space-y-3">
+                            <!-- Template Row -->
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
+                                <input type="text" placeholder="สูตรที่ผลิต" class="w-full md:col-span-2" required>
+                                <input type="number" step="0.01" placeholder="จำนวน (ลิตร)" class="w-full" required>
+                                <select class="w-full">
+                                    <option value="">เลือกขนาด</option>
+                                    <option value="4 ออนซ์">4 ออนซ์</option>
+                                    <option value="8 ออนซ์">8 ออนซ์</option>
+                                    <option value="16 ออนซ์">16 ออนซ์</option>
+                                    <option value="25 ออนซ์">25 ออนซ์</option>
+                                    <option value="ถุง">ถุง</option>
+                                </select>
+                                <input type="number" placeholder="จำนวน (ขวด/ถุง)" class="w-full" required>
+                            </div>
+                        </div>
+                        <button type="button" onclick="addProductionItemEntry()" class="mt-3 text-sm text-blue-600 hover:underline">+ เพิ่มรายการผลิต</button>
+                    </div>
+
+                    <!-- Section 2.1 -->
+                    <div class="form-section">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-700">ส่วนประกอบของอาหารพืช</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <input type="number" step="0.01" name="myo_inositol" placeholder="มายโออิน (กรัม)" class="w-full">
+                            <input type="number" step="0.01" name="sugar" placeholder="น้ำตาล (กรัม)" class="w-full">
+                            <input type="number" step="0.01" name="agar" placeholder="ผงวุ้น (กรัม)" class="w-full">
+                            <input type="number" step="0.01" name="charcoal" placeholder="ผงชาโค (กรัม)" class="w-full">
+                            <input type="number" step="0.01" name="water_drink" placeholder="น้ำดื่ม (ลิตร)" class="w-full">
+                            <input type="number" step="0.01" name="water_ro" placeholder="น้ำ RO (ลิตร)" class="w-full">
+                            <input type="number" step="0.01" name="water_di" placeholder="น้ำ DI (ลิตร)" class="w-full">
+                        </div>
+                    </div>
+                    
+                    <!-- Section 2.2 -->
+                    <div class="form-section">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-700">สารเคมีที่ใช้ผลิต</h3>
+                         <div id="chemical-entries" class="space-y-2">
+                             <div class="flex items-center gap-2">
+                                <input type="text" placeholder="ชื่อสารเคมี" class="w-full">
+                                <input type="number" step="0.01" placeholder="ปริมาณ (กรัม)" class="w-full">
+                            </div>
+                         </div>
+                         <button type="button" onclick="addChemicalEntry()" class="mt-2 text-sm text-blue-600 hover:underline">+ เพิ่มสารเคมี</button>
+                    </div>
+
+                    <!-- Section 2.3 & 2.4 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-section">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-700">การนึ่ง</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="number" name="steam_large_pot_food" placeholder="อาหารนึ่งหม้อใหญ่/ครั้ง" class="w-full">
+                                <input type="number" name="steam_small_pot_food" placeholder="อาหารนึ่งหม้อเล็ก/ครั้ง" class="w-full">
+                                <input type="number" name="steam_large_pot_plate" placeholder="เพลทนึ่งหม้อใหญ่/ครั้ง" class="w-full">
+                                <input type="number" name="steam_small_pot_plate" placeholder="เพลทนึ่งหม้อเล็ก/ครั้ง" class="w-full">
+                                <input type="number" step="0.01" name="gas_used" placeholder="แก๊สที่ใช้ไป (ถัง)" class="w-full col-span-2">
+                            </div>
+                        </div>
+                        <div class="form-section">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-700">การล้าง</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="number" name="wash_bottles" placeholder="ล้างขวด (ตะกร้า)" class="w-full">
+                                <input type="number" name="wash_lids" placeholder="ล้างฝา" class="w-full">
+                                <input type="number" name="wash_plates" placeholder="ล้างเพลท (ตะกร้า)" class="w-full">
+                                <input type="number" name="broken_plates" placeholder="เพลทแตก" class="w-full">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button type="submit" id="production-submit-btn" class="btn btn-primary w-full md:w-auto">บันทึกข้อมูลการผลิต</button>
+                        <button type="button" id="production-cancel-btn" class="btn btn-secondary w-full md:w-auto hidden" onclick="cancelEditProduction()">ยกเลิก</button>
+                    </div>
+                </form>
+
+                <div class="mt-8 form-section">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">ประวัติการผลิต</h3>
+                    <div class="table-container">
+                        <table id="production-history-table">
+                            <thead>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>สูตร</th>
+                                    <th>จำนวน (ลิตร)</th>
+                                    <th>จำนวนขวด</th>
+                                    <th>จำนวนถุง</th>
+                                    <th>การกระทำ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Usage Page -->
+            <div id="usage" class="page">
+                <div class="form-section">
+                     <h3 class="text-xl font-semibold mb-4 text-gray-700">บันทึกการนำอาหารไปใช้</h3>
+                     <form id="usage-form">
+                        <input type="hidden" id="editingUsageId">
+                        <input type="date" name="date" class="w-full mb-4" required>
+                        
+                        <div>
+                            <h4 class="text-md font-semibold mt-2 mb-2 text-gray-600">รายการที่นำไปใช้</h4>
+                            <div id="usage-item-entries" class="space-y-3 mb-2">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                                    <input type="text" placeholder="สูตรที่ใช้ผลิต" class="w-full md:col-span-2" required>
+                                    <select class="w-full">
+                                        <option value="">เลือกขนาด</option>
+                                        <option value="4 ออนซ์">4 ออนซ์</option>
+                                        <option value="8 ออนซ์">8 ออนซ์</option>
+                                        <option value="16 ออนซ์">16 ออนซ์</option>
+                                        <option value="24 ออนซ์">24 ออนซ์</option>
+                                        <option value="ถุง">ถุง</option>
+                                    </select>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" placeholder="จำนวน" class="w-full" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="addUsageItemEntry()" class="mb-4 text-sm text-blue-600 hover:underline">+ เพิ่มรายการ</button>
+                        </div>
+
+                         <div class="mt-4">
+                             <h4 class="text-md font-semibold mt-2 mb-2 text-gray-600">อาหารเสีย</h4>
+                            <div id="usage-waste-entries" class="space-y-3 mb-2">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                                    <select class="w-full md:col-span-2 waste-formula-select" required>
+                                        <option value="">เลือกสูตร</option>
+                                    </select>
+                                    <select class="w-full waste-reason-select" required>
+                                        <option value="">เลือกสาเหตุ</option>
+                                        <option value="เหลว">เหลว</option>
+                                        <option value="ขวดไม่สะอาด">ขวดไม่สะอาด</option>
+                                        <option value="ฝาไม่สะอาด">ฝาไม่สะอาด</option>
+                                        <option value="เป็นรา">เป็นรา</option>
+                                        <option value="ปนเปื้อน">ปนเปื้อน</option>
+                                        <option value="ขวดแตก">ขวดแตก</option>
+                                        <option value="ฝาแตก">ฝาแตก</option>
+                                        <option value="หมดอายุ">หมดอายุ</option>
+                                        <option value="ขวดเปล่า">ขวดเปล่า</option>
+                                    </select>
+                                    <input type="number" placeholder="จำนวน" class="w-full" required>
+                                </div>
+                            </div>
+                            <button type="button" onclick="addWasteItemEntry()" class="mb-4 text-sm text-blue-600 hover:underline">+ เพิ่มรายการอาหารเสีย</button>
+                         </div>
+                         <div class="flex space-x-2 mt-4">
+                            <button type="submit" id="usage-submit-btn" class="btn btn-primary">บันทึกการใช้งาน</button>
+                            <button type="button" id="usage-cancel-btn" class="btn btn-secondary hidden" onclick="cancelEditUsage()">ยกเลิก</button>
+                         </div>
+                     </form>
+                </div>
+                 <div class="mt-8 form-section">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">ประวัติการนำไปใช้</h3>
+                    <div class="table-container">
+                        <table id="usage-history-table">
+                            <thead>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>รายการที่ใช้ไป (สูตร, ขนาด, จำนวน)</th>
+                                    <th>อาหารเสีย (รวม)</th>
+                                    <th>การกระทำ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+             <!-- Food Stock Page -->
+            <div id="foodStock" class="page">
+                 <div class="form-section">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">เพิ่ม/แก้ไข รายการอาหารในสต๊อก</h3>
+                    <form id="food-stock-add-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <input type="hidden" id="editingFoodStockName">
+                        <input type="text" name="food_formula_name" placeholder="ชื่อสูตรอาหาร" class="w-full md:col-span-2" required>
+                        <input type="number" step="1" name="food_carry_over" placeholder="สต๊อกยกมา" class="w-full" required>
+                        <div class="flex space-x-2 w-full md:col-span-1">
+                             <button type="submit" id="food-stock-submit-btn" class="btn btn-primary w-full">บันทึก</button>
+                             <button type="button" id="food-stock-cancel-btn" class="btn btn-secondary w-full hidden" onclick="cancelEditFoodStock()">ยกเลิก</button>
+                        </div>
+                    </form>
+                 </div>
+
+                 <div class="form-section">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold text-gray-700">ตารางสต๊อกอาหาร</h2>
+                        <div class="flex space-x-2">
+                           <button id="food-stock-filter-today" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">วันนี้</button>
+                           <button id="food-stock-filter-month" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">เดือนนี้</button>
+                           <button id="food-stock-filter-year" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">ปีนี้</button>
+                           <button id="food-stock-filter-all" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">ทั้งหมด</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="food-stock-table">
+                            <thead>
+                                <tr>
+                                    <th>สูตรอาหาร</th>
+                                    <th>สต๊อกยกมา</th>
+                                    <th>ผลิตใหม่</th>
+                                    <th>ใช้ไป</th>
+                                    <th>อาหารเสีย</th>
+                                    <th>สต๊อกคงเหลือ</th>
+                                    <th>การกระทำ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chem Stock Page -->
+            <div id="chemStock" class="page">
+                 <div class="form-section">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">จัดการสต๊อกสาร</h3>
+                    <form id="chem-stock-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <input type="hidden" id="editingChemStockId">
+                        <input type="date" name="date" class="w-full" required>
+                        <select name="stock_name" class="w-full" required>
+                            <option value="สต๊อก A">สต๊อก A</option>
+                            <option value="สต๊อก B">สต๊อก B</option>
+                            <option value="สต๊อก C">สต๊อก C</option>
+                            <option value="สต๊อก D">สต๊อก D</option>
+                            <option value="สต๊อก E">สต๊อก E</option>
+                            <option value="สต๊อก F">สต๊อก F</option>
+                        </select>
+                        <input type="number" step="0.01" name="added" placeholder="ทำเพิ่ม">
+                        <input type="number" step="0.01" name="used" placeholder="ใช้ไป">
+                        <div class="flex space-x-2 w-full">
+                            <button type="submit" id="chem-stock-submit-btn" class="btn btn-primary w-full">บันทึก</button>
+                            <button type="button" id="chem-stock-cancel-btn" class="btn btn-secondary w-full hidden" onclick="cancelEditChemStock()">ยกเลิก</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="form-section">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-gray-700">สรุปสต๊อกสาร</h3>
+                        <div class="flex space-x-2">
+                           <button id="chem-stock-filter-today" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">วันนี้</button>
+                           <button id="chem-stock-filter-month" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">เดือนนี้</button>
+                           <button id="chem-stock-filter-year" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">ปีนี้</button>
+                           <button id="chem-stock-filter-all" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">ทั้งหมด</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                         <table id="chem-stock-summary-table">
+                            <thead>
+                                <tr>
+                                    <th>ลำดับ</th>
+                                    <th>รายการสต๊อกสาร</th>
+                                    <th>สต๊อกยกมา</th>
+                                    <th>ทำเพิ่ม</th>
+                                    <th>ใช้ไป</th>
+                                    <th>คงเหลือ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">ประวัติการทำรายการสต๊อกสาร</h3>
+                    <div class="table-container">
+                         <table id="chem-stock-history-table">
+                            <thead>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>รายการ</th>
+                                    <th>ทำเพิ่ม</th>
+                                    <th>ใช้ไป</th>
+                                    <th>การกระทำ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ingredient Stock Page -->
+            <div id="ingredientStock" class="page">
+                 <div class="form-section">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold text-gray-700">ตารางสต๊อกส่วนประกอบคงเหลือ</h2>
+                        <div class="flex space-x-2">
+                           <button id="ingredient-stock-filter-today" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">วันนี้</button>
+                           <button id="ingredient-stock-filter-month" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">เดือนนี้</button>
+                           <button id="ingredient-stock-filter-year" class="filter-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">ปีนี้</button>
+                           <button id="ingredient-stock-filter-all" class="filter-btn active px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">ทั้งหมด</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="ingredient-stock-table">
+                            <thead>
+                                <tr>
+                                    <th>ลำดับ</th>
+                                    <th>รายการ</th>
+                                    <th>สต๊อกยกมา (กรัม/ลิตร)</th>
+                                    <th>ใช้ไป (กรัม/ลิตร)</th>
+                                    <th>คงเหลือ (กรัม/ลิตร)</th>
+                                </tr>
+                            </thead>
+                             <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query, orderBy, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBN0ND5wkgZO4IyqYiGEolbzChA5DQOvrI",
+            authDomain: "produce-2-8d52d.firebaseapp.com",
+            projectId: "produce-2-8d52d",
+            storageBucket: "produce-2-8d52d.appspot.com",
+            messagingSenderId: "796441070315",
+            appId: "1:796441070315:web:4b3aa46d2fe8e8cf508cae",
+            measurementId: "G-1E8N1VTR05"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'produce-2-app';
+        let userId;
+        
+        const sanitizeDocId = (id) => id.replace(/\//g, '__SLASH__');
+
+        let allProductions = [];
+        let allUsages = [];
+        let allChemStockTransactions = [];
+        let ingredientCarryOver = {};
+        let foodCarryOver = {};
+        let chemCarryOver = {};
+        let customChemicals = new Set();
+
+        let dashboardFilter = 'all';
+        let foodStockFilter = 'all';
+        let chemStockFilter = 'all';
+        let ingredientStockFilter = 'all';
+
+        const INGREDIENT_MAP = {
+            'myo_inositol': 'มายโออิน (กรัม)',
+            'sugar': 'น้ำตาล (กรัม)',
+            'agar': 'ผงวุ้น (กรัม)',
+            'charcoal': 'ผงชาโค (กรัม)',
+            'water_drink': 'น้ำดื่ม (ลิตร)',
+            'water_ro': 'น้ำ RO (ลิตร)',
+            'water_di': 'น้ำ DI (ลิตร)'
+        };
+
+        function formatNumber(num) {
+            if (typeof num !== 'number') num = parseFloat(num) || 0;
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatInteger(num) {
+            if (typeof num !== 'number') num = parseInt(num) || 0;
+            return num.toLocaleString('en-US');
+        }
+        
+        window.showPage = (pageId) => {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('onclick') === `showPage('${pageId}')`) {
+                    btn.classList.add('active');
+                }
+            });
+        };
+        
+        window.addProductionItemEntry = () => {
+            const container = document.getElementById('production-item-entries');
+            const entry = document.createElement('div');
+            entry.className = 'grid grid-cols-1 md:grid-cols-5 gap-2 items-center relative';
+            entry.innerHTML = `
+                <input type="text" placeholder="สูตรที่ผลิต" class="w-full md:col-span-2" required>
+                <input type="number" step="0.01" placeholder="จำนวน (ลิตร)" class="w-full" required>
+                <select class="w-full">
+                    <option value="">เลือกขนาด</option>
+                    <option value="4 ออนซ์">4 ออนซ์</option>
+                    <option value="8 ออนซ์">8 ออนซ์</option>
+                    <option value="16 ออนซ์">16 ออนซ์</option>
+                    <option value="25 ออนซ์">25 ออนซ์</option>
+                    <option value="ถุง">ถุง</option>
+                </select>
+                <div class="flex items-center gap-2">
+                     <input type="number" placeholder="จำนวน (ขวด/ถุง)" class="w-full" required>
+                </div>
+                <button type="button" class="absolute -right-6 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(entry);
+        };
+        
+        window.addUsageItemEntry = () => {
+            const container = document.getElementById('usage-item-entries');
+            const entry = document.createElement('div');
+            entry.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center relative';
+            entry.innerHTML = `
+                <input type="text" placeholder="สูตรที่ใช้ผลิต" class="w-full md:col-span-2" required>
+                <select class="w-full">
+                    <option value="">เลือกขนาด</option>
+                    <option value="4 ออนซ์">4 ออนซ์</option>
+                    <option value="8 ออนซ์">8 ออนซ์</option>
+                    <option value="16 ออนซ์">16 ออนซ์</option>
+                    <option value="24 ออนซ์">24 ออนซ์</option>
+                    <option value="ถุง">ถุง</option>
+                </select>
+                <div class="flex items-center gap-2">
+                    <input type="number" placeholder="จำนวน" class="w-full" required>
+                </div>
+                <button type="button" class="absolute -right-6 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(entry);
+        };
+
+        window.addWasteItemEntry = () => {
+            const container = document.getElementById('usage-waste-entries');
+            const entry = document.createElement('div');
+            entry.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center relative';
+            entry.innerHTML = `
+                <select class="w-full md:col-span-2 waste-formula-select" required><option value="">เลือกสูตร</option></select>
+                <select class="w-full waste-reason-select" required>
+                    <option value="">เลือกสาเหตุ</option>
+                    <option value="เหลว">เหลว</option>
+                    <option value="ขวดไม่สะอาด">ขวดไม่สะอาด</option>
+                    <option value="ฝาไม่สะอาด">ฝาไม่สะอาด</option>
+                    <option value="เป็นรา">เป็นรา</option>
+                    <option value="ปนเปื้อน">ปนเปื้อน</option>
+                    <option value="ขวดแตก">ขวดแตก</option>
+                    <option value="ฝาแตก">ฝาแตก</option>
+                    <option value="หมดอายุ">หมดอายุ</option>
+                    <option value="ขวดเปล่า">ขวดเปล่า</option>
+                </select>
+                <input type="number" placeholder="จำนวน" class="w-full" required>
+                <button type="button" class="absolute -right-6 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(entry);
+            updateWasteFormulaOptions();
+        };
+
+        function updateWasteFormulaOptions() {
+            const usedFormulas = new Set();
+            document.querySelectorAll('#usage-item-entries input[type="text"]').forEach(input => {
+                const name = input.value.trim();
+                if (name) usedFormulas.add(name);
+            });
+
+            const formulaOptions = Array.from(usedFormulas).map(name => `<option value="${name}">${name}</option>`).join('');
+
+            document.querySelectorAll('.waste-formula-select').forEach(select => {
+                const selectedValue = select.value;
+                select.innerHTML = '<option value="">เลือกสูตร</option>' + formulaOptions;
+                if (usedFormulas.has(selectedValue)) {
+                    select.value = selectedValue;
+                }
+            });
+        }
+        
+        window.addChemicalEntry = () => {
+             const container = document.getElementById('chemical-entries');
+             const entry = document.createElement('div');
+             entry.className = 'flex items-center gap-2 relative';
+             entry.innerHTML = `
+                <input type="text" placeholder="ชื่อสารเคมี" class="w-full">
+                <input type="number" step="0.01" placeholder="ปริมาณ (กรัม)" class="w-full">
+                <button type="button" class="absolute -right-6 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700" onclick="this.parentElement.remove()">X</button>
+             `;
+             container.appendChild(entry);
+        };
+        
+        async function saveData(collectionName, data) {
+            try {
+                const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/${collectionName}`), data);
+                console.log(`Data saved to ${collectionName} with ID: ${docRef.id}`);
+                return true;
+            } catch (error) {
+                console.error(`Error writing to ${collectionName}: `, error);
+                return false;
+            }
+        }
+        
+        async function updateData(collectionName, id, data) {
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, id), data);
+                console.log(`Document ${id} in ${collectionName} updated.`);
+                return true;
+            } catch(e) {
+                console.error("Error updating document: ", e);
+                return false;
+            }
+        }
+
+        async function updateCarryOver(collectionName, docId, data) {
+            try {
+                const sanitizedId = sanitizeDocId(docId);
+                const docRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, sanitizedId);
+                await setDoc(docRef, data);
+                console.log(`${docId} carry over updated in ${collectionName}`);
+            } catch (error) {
+                console.error(`Error updating carry over for ${docId}:`, error);
+            }
+        }
+
+        async function deleteData(collectionName, id) {
+             if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+                try {
+                    const sanitizedId = sanitizeDocId(id);
+                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/${collectionName}`, sanitizedId));
+                    console.log(`Document ${id} deleted from ${collectionName}`);
+                } catch (error) {
+                    console.error("Error removing document: ", error);
+                }
+            }
+        }
+        
+        async function syncCustomChemicals(newChemicals) {
+             for (const chem of newChemicals) {
+                 if (!customChemicals.has(chem) && chem.trim() !== '') {
+                     try {
+                         await setDoc(doc(db, `artifacts/${appId}/public/data/customChemicals`, chem), { name: chem });
+                     } catch (e) { console.error("Failed to add custom chemical:", e); }
+                 }
+             }
+        }
+
+        function filterDataByDate(dataArray, filter) {
+            if (filter === 'all' || !filter) return dataArray;
+            const now = new Date();
+            const today = now.toISOString().slice(0, 10);
+            const thisMonth = now.toISOString().slice(0, 7);
+            const thisYear = now.getFullYear().toString();
+
+            if (filter === 'today') return dataArray.filter(d => d.date === today);
+            if (filter === 'month') return dataArray.filter(d => d.date.startsWith(thisMonth));
+            if (filter === 'year') return dataArray.filter(d => d.date.startsWith(thisYear));
+            return dataArray;
+        }
+
+        function updateDashboard() {
+            const filteredProductions = filterDataByDate(allProductions, dashboardFilter);
+            
+            let totalLiters = 0;
+            let totalBottles4oz = 0;
+            let totalBottles8oz = 0;
+            let totalBottles16oz = 0;
+            let totalBottles24oz = 0;
+            let totalBags = 0;
+
+            filteredProductions.forEach(p => {
+                if (p.productionItems && p.productionItems.length > 0) {
+                    p.productionItems.forEach(item => {
+                        totalLiters += item.liters || 0;
+                        switch (item.size) {
+                            case '4 ออนซ์': totalBottles4oz += item.quantity || 0; break;
+                            case '8 ออนซ์': totalBottles8oz += item.quantity || 0; break;
+                            case '16 ออนซ์': totalBottles16oz += item.quantity || 0; break;
+                            case '24 ออนซ์': totalBottles24oz += item.quantity || 0; break;
+                            case '25 ออนซ์': totalBottles24oz += item.quantity || 0; break; 
+                            case 'ถุง': totalBags += item.quantity || 0; break;
+                        }
+                    });
+                } 
+            });
+
+            const washBottles = filteredProductions.reduce((sum, p) => sum + (p.wash_bottles || 0), 0);
+            const washLids = filteredProductions.reduce((sum, p) => sum + (p.wash_lids || 0), 0);
+            const washPlates = filteredProductions.reduce((sum, p) => sum + (p.wash_plates || 0), 0);
+            const steamLargeFood = filteredProductions.reduce((sum, p) => sum + (p.steam_large_pot_food || 0), 0);
+            const steamSmallFood = filteredProductions.reduce((sum, p) => sum + (p.steam_small_pot_food || 0), 0);
+            const steamLargePlate = filteredProductions.reduce((sum, p) => sum + (p.steam_large_pot_plate || 0), 0);
+            const steamSmallPlate = filteredProductions.reduce((sum, p) => sum + (p.steam_small_pot_plate || 0), 0);
+            const gasUsed = filteredProductions.reduce((sum, p) => sum + (p.gas_used || 0), 0);
+            
+            document.getElementById('dashboard-total-liters').textContent = `${formatNumber(totalLiters)} ลิตร`;
+            document.getElementById('dashboard-bottle-4oz').textContent = formatInteger(totalBottles4oz);
+            document.getElementById('dashboard-bottle-8oz').textContent = formatInteger(totalBottles8oz);
+            document.getElementById('dashboard-bottle-16oz').textContent = formatInteger(totalBottles16oz);
+            document.getElementById('dashboard-bottle-24oz').textContent = formatInteger(totalBottles24oz);
+            document.getElementById('dashboard-bags').textContent = formatInteger(totalBags);
+            document.getElementById('dashboard-wash-bottles').textContent = formatInteger(washBottles);
+            document.getElementById('dashboard-wash-lids').textContent = formatInteger(washLids);
+            document.getElementById('dashboard-wash-plates').textContent = formatInteger(washPlates);
+            document.getElementById('dashboard-steam-large-food').textContent = formatInteger(steamLargeFood);
+            document.getElementById('dashboard-steam-small-food').textContent = formatInteger(steamSmallFood);
+            document.getElementById('dashboard-steam-large-plate').textContent = formatInteger(steamLargePlate);
+            document.getElementById('dashboard-steam-small-plate').textContent = formatInteger(steamSmallPlate);
+            document.getElementById('dashboard-gas-used').textContent = formatNumber(gasUsed);
+        }
+
+        function renderProductionHistory() {
+            const tableBody = document.getElementById('production-history-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+            allProductions.forEach(p => {
+                let totalLiters = 0;
+                let formulasStr = '';
+                let totalBottles = 0;
+                let totalBags = 0;
+
+                if (p.productionItems && p.productionItems.length > 0) {
+                     totalLiters = p.productionItems.reduce((sum, item) => sum + item.liters, 0);
+                     formulasStr = [...new Set(p.productionItems.map(item => item.formula))].join(', ');
+                     totalBottles = p.productionItems.filter(item => item.size !== 'ถุง').reduce((sum, item) => sum + item.quantity, 0);
+                     totalBags = p.productionItems.filter(item => item.size === 'ถุง').reduce((sum, item) => sum + item.quantity, 0);
+                } 
+                const row = `
+                    <tr>
+                        <td>${p.date}</td>
+                        <td>${formulasStr}</td>
+                        <td>${formatNumber(totalLiters)}</td>
+                        <td>${formatInteger(totalBottles)}</td>
+                        <td>${formatInteger(totalBags)}</td>
+                        <td class="flex space-x-2">
+                            <button class="btn btn-secondary" onclick="window.editProduction('${p.id}')">แก้ไข</button>
+                            <button class="btn btn-danger" onclick="window.deleteProduction('${p.id}')">ลบ</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+            window.deleteProduction = (id) => deleteData('productions', id);
+        }
+        
+        function renderUsageHistory() {
+            const tableBody = document.getElementById('usage-history-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+            allUsages.forEach(u => {
+                const totalWaste = (u.wasteItems || []).reduce((sum, item) => sum + item.quantity, 0);
+                const itemsStr = (u.items || []).map(item => `${item.formula} (${item.size}): ${formatInteger(item.quantity)}`).join('<br>');
+
+                const row = `
+                    <tr>
+                        <td>${u.date}</td>
+                        <td>${itemsStr}</td>
+                        <td>${formatInteger(totalWaste)}</td>
+                        <td class="flex space-x-2">
+                             <button class="btn btn-secondary" onclick="window.editUsage('${u.id}')">แก้ไข</button>
+                            <button class="btn btn-danger" onclick="window.deleteUsage('${u.id}')">ลบ</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+            window.deleteUsage = (id) => deleteData('usages', id);
+        }
+
+        function updateIngredientStockTable() {
+            const tableBody = document.getElementById('ingredient-stock-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+            
+            const filteredProductions = filterDataByDate(allProductions, ingredientStockFilter);
+            const allIngredientKeys = [...Object.keys(INGREDIENT_MAP), ...Array.from(customChemicals)];
+            
+            const filteredUsageMap = new Map();
+            filteredProductions.forEach(p => {
+                Object.keys(INGREDIENT_MAP).forEach(key => {
+                    if (p[key] > 0) filteredUsageMap.set(key, (filteredUsageMap.get(key) || 0) + p[key]);
+                });
+                (p.chemicals || []).forEach(chem => {
+                    if(chem.name) filteredUsageMap.set(chem.name, (filteredUsageMap.get(chem.name) || 0) + chem.amount);
+                });
+            });
+
+            const totalUsageMap = new Map();
+             allProductions.forEach(p => {
+                Object.keys(INGREDIENT_MAP).forEach(key => {
+                    if (p[key] > 0) totalUsageMap.set(key, (totalUsageMap.get(key) || 0) + p[key]);
+                });
+                (p.chemicals || []).forEach(chem => {
+                    if(chem.name) totalUsageMap.set(chem.name, (totalUsageMap.get(chem.name) || 0) + chem.amount);
+                });
+            });
+
+            allIngredientKeys.forEach((itemKey, index) => {
+                const displayName = INGREDIENT_MAP[itemKey] || itemKey;
+                const carryOver = (ingredientCarryOver[itemKey] && ingredientCarryOver[itemKey].value) || 0;
+                const used_filtered = filteredUsageMap.get(itemKey) || 0;
+                const used_total = totalUsageMap.get(itemKey) || 0;
+                const remaining = carryOver - used_total;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${displayName}</td>
+                    <td>
+                        <input type="number" step="0.01" value="${carryOver.toFixed(2)}" 
+                        class="w-32 bg-gray-100 p-1 rounded" 
+                        onchange="window.handleIngredientCarryOverChange('${itemKey}', this.value)">
+                    </td>
+                    <td>${formatNumber(used_filtered)}</td>
+                    <td>${formatNumber(remaining)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+             window.handleIngredientCarryOverChange = (itemName, value) => {
+                updateCarryOver('ingredientCarryOver', itemName, { value: parseFloat(value) || 0 });
+            };
+        }
+
+        function updateFoodStockTable() {
+            const tableBody = document.getElementById('food-stock-table').querySelector('tbody');
+            if (!tableBody) return; 
+            tableBody.innerHTML = '';
+            
+            const filteredProductions = filterDataByDate(allProductions, foodStockFilter);
+            const filteredUsages = filterDataByDate(allUsages, foodStockFilter);
+            
+            const aggregatedFormulas = new Map();
+
+            const getFormulaData = (map, name) => {
+                const trimmedName = name.trim();
+                const normalizedKey = trimmedName.toLowerCase();
+                if (!map.has(normalizedKey)) {
+                    map.set(normalizedKey, {
+                        displayName: trimmedName,
+                        carryOver: 0,
+                        produced_filtered: 0, used_filtered: 0, wasted_filtered: 0,
+                        produced_total: 0, used_total: 0, wasted_total: 0
+                    });
+                }
+                return map.get(normalizedKey);
+            };
+
+            for (const name in foodCarryOver) {
+                const data = getFormulaData(aggregatedFormulas, name);
+                data.carryOver = foodCarryOver[name].value || 0;
+            }
+            allProductions.forEach(p => (p.productionItems || []).forEach(item => getFormulaData(aggregatedFormulas, item.formula)));
+            allUsages.forEach(u => {
+                (u.items || []).forEach(item => getFormulaData(aggregatedFormulas, item.formula));
+                (u.wasteItems || []).forEach(item => getFormulaData(aggregatedFormulas, item.formula));
+            });
+
+            allProductions.forEach(p => {
+                (p.productionItems || []).forEach(item => { getFormulaData(aggregatedFormulas, item.formula).produced_total += item.quantity || 0; });
+            });
+            allUsages.forEach(u => {
+                (u.items || []).forEach(item => { getFormulaData(aggregatedFormulas, item.formula).used_total += (item.quantity || 0); });
+                (u.wasteItems || []).forEach(item => { getFormulaData(aggregatedFormulas, item.formula).wasted_total += (item.quantity || 0); });
+            });
+
+            filteredProductions.forEach(p => {
+                (p.productionItems || []).forEach(item => { getFormulaData(aggregatedFormulas, item.formula).produced_filtered += item.quantity || 0; });
+            });
+            filteredUsages.forEach(u => {
+                (u.items || []).forEach(item => { getFormulaData(aggregatedFormulas, item.formula).used_filtered += (item.quantity || 0); });
+                (u.wasteItems || []).forEach(item => { getFormulaData(aggregatedFormulas, item.formula).wasted_filtered += (item.quantity || 0); });
+            });
+            
+            const sortedFormulas = Array.from(aggregatedFormulas.values()).sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+            for (const data of sortedFormulas) {
+                const remaining = data.carryOver + data.produced_total - data.used_total - data.wasted_total;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${data.displayName}</td>
+                    <td>
+                         <input type="number" step="1" value="${data.carryOver}" 
+                         class="w-32 bg-gray-100 p-1 rounded" 
+                         onchange="window.handleFoodCarryOverChange('${data.displayName}', this.value)">
+                    </td>
+                    <td>${formatInteger(data.produced_filtered)}</td>
+                    <td>${formatInteger(data.used_filtered)}</td>
+                    <td>${formatInteger(data.wasted_filtered)}</td>
+                    <td>${formatInteger(remaining)}</td>
+                    <td class="flex space-x-2">
+                        <button class="btn btn-secondary" onclick="window.editFoodStock('${data.displayName}', ${data.carryOver})">แก้ไข</button>
+                        <button class="btn btn-danger" onclick="window.deleteFoodStock('${data.displayName}')">ลบ</button>
+                    </td>
+                 `;
+                tableBody.appendChild(row);
+            }
+
+            window.handleFoodCarryOverChange = (formulaName, value) => {
+                updateCarryOver('foodCarryOver', formulaName, { displayName: formulaName.trim(), value: parseInt(value) || 0 });
+            };
+        }
+
+        function updateChemStockSummaryTable() {
+            const tableBody = document.getElementById('chem-stock-summary-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+            
+            const filteredTransactions = filterDataByDate(allChemStockTransactions, chemStockFilter);
+            
+            const stockMap = new Map();
+            const stockNames = ['A', 'B', 'C', 'D', 'E', 'F'].map(s => `สต๊อก ${s}`);
+            stockNames.forEach(name => {
+                stockMap.set(name, {
+                    added_filtered: 0, used_filtered: 0,
+                    added_total: 0, used_total: 0
+                });
+            });
+
+            filteredTransactions.forEach(t => {
+                if (stockMap.has(t.stock_name)) {
+                    const data = stockMap.get(t.stock_name);
+                    data.added_filtered += t.added || 0;
+                    data.used_filtered += t.used || 0;
+                }
+            });
+
+            allChemStockTransactions.forEach(t => {
+                if (stockMap.has(t.stock_name)) {
+                   const data = stockMap.get(t.stock_name);
+                    data.added_total += t.added || 0;
+                    data.used_total += t.used || 0;
+                }
+            });
+
+            let i = 1;
+            for (const [name, data] of stockMap.entries()) {
+                const carryOver = (chemCarryOver[name] && chemCarryOver[name].value) || 0;
+                const remaining = carryOver + data.added_total - data.used_total;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i++}</td>
+                    <td>${name}</td>
+                    <td>
+                        <input type="number" step="0.01" value="${carryOver.toFixed(2)}"
+                        class="w-32 bg-gray-100 p-1 rounded"
+                        onchange="window.handleChemCarryOverChange('${name}', this.value)">
+                    </td>
+                    <td>${formatNumber(data.added_filtered)}</td>
+                    <td>${formatNumber(data.used_filtered)}</td>
+                    <td>${formatNumber(remaining)}</td>
+                `;
+                tableBody.appendChild(row);
+            }
+             window.handleChemCarryOverChange = (stockName, value) => {
+                updateCarryOver('chemCarryOver', stockName, { value: parseFloat(value) || 0 });
+            };
+        }
+
+        function renderChemStockHistory() {
+            const tableBody = document.getElementById('chem-stock-history-table').querySelector('tbody');
+            tableBody.innerHTML = '';
+            allChemStockTransactions.forEach(t => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${t.date}</td>
+                    <td>${t.stock_name}</td>
+                    <td>${formatNumber(t.added || 0)}</td>
+                    <td>${formatNumber(t.used || 0)}</td>
+                    <td class="flex space-x-2">
+                        <button class="btn btn-secondary" onclick="window.editChemStock('${t.id}')">แก้ไข</button>
+                        <button class="btn btn-danger" onclick="window.deleteChemStock('${t.id}')">ลบ</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            window.editChemStock = (id) => {
+                const record = allChemStockTransactions.find(t => t.id === id);
+                if (!record) return;
+
+                const form = document.getElementById('chem-stock-form');
+                form.elements['date'].value = record.date;
+                form.elements['stock_name'].value = record.stock_name;
+                form.elements['added'].value = record.added || '';
+                form.elements['used'].value = record.used || '';
+                
+                document.getElementById('editingChemStockId').value = id;
+                document.getElementById('chem-stock-submit-btn').textContent = 'อัปเดต';
+                document.getElementById('chem-stock-cancel-btn').classList.remove('hidden');
+            };
+
+            window.deleteChemStock = (id) => deleteData('chemStockTransactions', id);
+        }
+
+        window.cancelEditChemStock = () => {
+            const form = document.getElementById('chem-stock-form');
+            form.reset();
+            document.getElementById('editingChemStockId').value = '';
+            document.getElementById('chem-stock-submit-btn').textContent = 'บันทึก';
+            document.getElementById('chem-stock-cancel-btn').classList.add('hidden');
+        }
+        
+        document.getElementById('production-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const editingId = form.elements['editingId'].value;
+
+            const productionItems = [];
+            document.querySelectorAll('#production-item-entries > div').forEach(row => {
+                const inputs = row.querySelectorAll('input, select');
+                const formula = inputs[0].value.trim();
+                const liters = parseFloat(inputs[1].value) || 0;
+                const size = inputs[2].value;
+                const quantity = parseInt(inputs[3].value) || 0;
+                if (formula && liters > 0 && size && quantity > 0) {
+                    productionItems.push({ formula, liters, size, quantity });
+                }
+            });
+
+            if (productionItems.length === 0) {
+                alert('กรุณากรอกข้อมูลการผลิตอย่างน้อย 1 รายการ');
+                return;
+            }
+
+            const chemicals = [];
+            const newChemicalNames = new Set();
+            document.querySelectorAll('#chemical-entries > div').forEach(entry => {
+                const inputs = entry.querySelectorAll('input');
+                const name = inputs[0].value.trim();
+                const amount = parseFloat(inputs[1].value) || 0;
+                if(name && amount > 0) {
+                    chemicals.push({ name, amount });
+                    newChemicalNames.add(name);
+                }
+            });
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const productionData = {
+                date: data.date, 
+                productionItems,
+                chemicals,
+                myo_inositol: parseFloat(data.myo_inositol) || 0,
+                sugar: parseFloat(data.sugar) || 0,
+                agar: parseFloat(data.agar) || 0,
+                charcoal: parseFloat(data.charcoal) || 0,
+                water_drink: parseFloat(data.water_drink) || 0,
+                water_ro: parseFloat(data.water_ro) || 0,
+                water_di: parseFloat(data.water_di) || 0,
+                steam_large_pot_food: parseInt(data.steam_large_pot_food) || 0, 
+                steam_small_pot_food: parseInt(data.steam_small_pot_food) || 0,
+                steam_large_pot_plate: parseInt(data.steam_large_pot_plate) || 0, 
+                steam_small_pot_plate: parseInt(data.steam_small_pot_plate) || 0,
+                gas_used: parseFloat(data.gas_used) || 0, 
+                wash_bottles: parseInt(data.wash_bottles) || 0,
+                wash_lids: parseInt(data.wash_lids) || 0, 
+                wash_plates: parseInt(data.wash_plates) || 0,
+                broken_plates: parseInt(data.broken_plates) || 0, 
+                createdAt: new Date()
+            };
+            
+            let success = editingId ? await updateData('productions', editingId, productionData) : await saveData('productions', productionData);
+
+            if (success) {
+                await syncCustomChemicals(newChemicalNames);
+                cancelEditProduction();
+            }
+        });
+
+        document.getElementById('usage-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const editingId = document.getElementById('editingUsageId').value;
+
+            const items = [];
+            document.querySelectorAll('#usage-item-entries > div').forEach(row => {
+                const inputs = row.querySelectorAll('input, select');
+                const name = inputs[0].value.trim();
+                const size = inputs[1].value;
+                const quantity = parseInt(inputs[2].value) || 0;
+                if (name && size && quantity > 0) {
+                    items.push({ formula: name, size: size, quantity: quantity });
+                }
+            });
+            
+            if (items.length === 0) { alert("กรุณาเพิ่มรายการที่ใช้งานอย่างน้อย 1 รายการ"); return; }
+            
+            const wasteItems = [];
+            document.querySelectorAll('#usage-waste-entries > div').forEach(row => {
+                const selects = row.querySelectorAll('select');
+                const input = row.querySelector('input[type="number"]');
+                const formula = selects[0].value;
+                const reason = selects[1].value;
+                const quantity = parseInt(input.value) || 0;
+                if (formula && reason && quantity > 0) {
+                    wasteItems.push({ formula, reason, quantity });
+                }
+            });
+
+            const usageData = {
+                date: form.elements['date'].value, 
+                items,
+                wasteItems,
+                createdAt: new Date()
+            };
+            const success = editingId ? await updateData('usages', editingId, usageData) : await saveData('usages', usageData);
+            if(success) {
+                cancelEditUsage();
+            }
+        });
+
+        document.getElementById('chem-stock-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            const editingId = document.getElementById('editingChemStockId').value;
+
+            const chemStockData = {
+                date: data.date, stock_name: data.stock_name,
+                added: parseFloat(data.added) || 0, used: parseFloat(data.used) || 0,
+                createdAt: new Date()
+            };
+            
+            let success = editingId ? await updateData('chemStockTransactions', editingId, chemStockData) : await saveData('chemStockTransactions', chemStockData);
+            if (success) cancelEditChemStock();
+        });
+        
+        document.getElementById('food-stock-add-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const editingName = document.getElementById('editingFoodStockName').value;
+            
+            const name = formData.get('food_formula_name').trim();
+            const carryOver = parseInt(formData.get('food_carry_over')) || 0;
+
+            if (!name) { alert('กรุณากรอกชื่อสูตรอาหาร'); return; }
+            
+            const nameToUpdate = editingName || name;
+            
+            await updateCarryOver('foodCarryOver', nameToUpdate, { displayName: nameToUpdate, value: carryOver });
+            
+            if (editingName) {
+                cancelEditFoodStock();
+            } else {
+                form.reset();
+            }
+        });
+        
+        window.editFoodStock = (name, carryOver) => {
+            const form = document.getElementById('food-stock-add-form');
+            form.elements['food_formula_name'].value = name;
+            form.elements['food_formula_name'].readOnly = true;
+            form.elements['food_carry_over'].value = carryOver;
+
+            document.getElementById('editingFoodStockName').value = name;
+            document.getElementById('food-stock-submit-btn').textContent = "อัปเดต";
+            document.getElementById('food-stock-cancel-btn').classList.remove('hidden');
+            window.scrollTo({ top: form.offsetTop - 20, behavior: 'smooth' });
+        };
+
+        window.cancelEditFoodStock = () => {
+            const form = document.getElementById('food-stock-add-form');
+            form.reset();
+            form.elements['food_formula_name'].readOnly = false;
+            document.getElementById('editingFoodStockName').value = '';
+            document.getElementById('food-stock-submit-btn').textContent = "บันทึก";
+            document.getElementById('food-stock-cancel-btn').classList.add('hidden');
+        };
+
+        window.deleteFoodStock = (name) => {
+            deleteData('foodCarryOver', name.trim());
+        };
+        
+        window.editProduction = (id) => {
+            const record = allProductions.find(p => p.id === id);
+            if (!record) return;
+            
+            const form = document.getElementById('production-form');
+            form.reset();
+            form.elements['date'].value = record.date;
+             for (const key in record) {
+                if (form.elements[key]) {
+                    form.elements[key].value = record[key] || '';
+                }
+            }
+
+            const itemContainer = document.getElementById('production-item-entries');
+            itemContainer.innerHTML = '';
+            if (record.productionItems && record.productionItems.length > 0) {
+                record.productionItems.forEach(item => {
+                    addProductionItemEntry();
+                    const newRow = itemContainer.lastElementChild;
+                    const inputs = newRow.querySelectorAll('input, select');
+                    inputs[0].value = item.formula;
+                    inputs[1].value = item.liters;
+                    inputs[2].value = item.size;
+                    inputs[3].value = item.quantity;
+                });
+                 const firstRow = itemContainer.firstElementChild;
+                 if(firstRow) firstRow.querySelector('button')?.remove();
+            } else {
+                addProductionItemEntry();
+                const firstRow = itemContainer.firstElementChild;
+                if(firstRow) firstRow.querySelector('button')?.remove();
+            }
+            
+            const chemicalContainer = document.getElementById('chemical-entries');
+            chemicalContainer.innerHTML = '';
+            (record.chemicals || []).forEach(c => {
+                const entry = document.createElement('div');
+                entry.className = 'flex items-center gap-2 relative';
+                entry.innerHTML = `<input type="text" placeholder="ชื่อสารเคมี" class="w-full" value="${c.name}"><input type="number" step="0.01" placeholder="ปริมาณ (กรัม)" class="w-full" value="${c.amount}"><button type="button" class="absolute -right-6 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700" onclick="this.parentElement.remove()">X</button>`;
+                chemicalContainer.appendChild(entry);
+            });
+            
+            document.getElementById('editingProductionId').value = id;
+            document.getElementById('production-submit-btn').textContent = "อัปเดตข้อมูล";
+            document.getElementById('production-cancel-btn').classList.remove('hidden');
+            window.scrollTo({ top: form.offsetTop - 20, behavior: 'smooth' });
+        };
+        
+        window.cancelEditProduction = () => {
+            const form = document.getElementById('production-form');
+            form.reset();
+            document.getElementById('editingProductionId').value = '';
+            document.getElementById('production-item-entries').innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-2 items-center">
+                <input type="text" placeholder="สูตรที่ผลิต" class="w-full md:col-span-2" required>
+                <input type="number" step="0.01" placeholder="จำนวน (ลิตร)" class="w-full" required>
+                <select class="w-full">
+                    <option value="">เลือกขนาด</option>
+                    <option value="4 ออนซ์">4 ออนซ์</option>
+                    <option value="8 ออนซ์">8 ออนซ์</option>
+                    <option value="16 ออนซ์">16 ออนซ์</option>
+                    <option value="25 ออนซ์">25 ออนซ์</option>
+                    <option value="ถุง">ถุง</option>
+                </select>
+                <input type="number" placeholder="จำนวน (ขวด/ถุง)" class="w-full" required>
+            </div>`;
+            document.getElementById('chemical-entries').innerHTML = `<div class="flex items-center gap-2"><input type="text" placeholder="ชื่อสารเคมี" class="w-full"><input type="number" step="0.01" placeholder="ปริมาณ (กรัม)" class="w-full"></div>`;
+            document.getElementById('production-submit-btn').textContent = "บันทึกข้อมูลการผลิต";
+            document.getElementById('production-cancel-btn').classList.add('hidden');
+        };
+
+        window.editUsage = (id) => {
+            const record = allUsages.find(u => u.id === id);
+            if (!record) return;
+
+            const form = document.getElementById('usage-form');
+            form.reset();
+            form.elements['date'].value = record.date;
+            
+            const itemContainer = document.getElementById('usage-item-entries');
+            itemContainer.innerHTML = ''; 
+            (record.items || []).forEach(item => {
+                addUsageItemEntry();
+                const newRow = itemContainer.lastElementChild;
+                if (newRow) {
+                    const inputs = newRow.querySelectorAll('input, select');
+                    inputs[0].value = item.formula;
+                    inputs[1].value = item.size;
+                    inputs[2].value = item.quantity;
+                }
+            });
+            if((record.items || []).length === 0) { addUsageItemEntry(); }
+             const firstItemRow = itemContainer.firstElementChild;
+             if(firstItemRow) firstItemRow.querySelector('button')?.remove();
+
+            updateWasteFormulaOptions();
+
+            const wasteContainer = document.getElementById('usage-waste-entries');
+            wasteContainer.innerHTML = '';
+             if ((record.wasteItems || []).length > 0) {
+                record.wasteItems.forEach(wasteItem => {
+                    addWasteItemEntry();
+                    const newRow = wasteContainer.lastElementChild;
+                    if (newRow) {
+                        const selects = newRow.querySelectorAll('select');
+                        const input = newRow.querySelector('input[type="number"]');
+                        selects[0].value = wasteItem.formula;
+                        selects[1].value = wasteItem.reason;
+                        input.value = wasteItem.quantity;
+                    }
+                });
+            } else {
+                 addWasteItemEntry();
+            }
+            const firstWasteRow = wasteContainer.firstElementChild;
+            if (firstWasteRow) firstWasteRow.querySelector('button')?.remove();
+
+            document.getElementById('editingUsageId').value = id;
+            document.getElementById('usage-submit-btn').textContent = "อัปเดตข้อมูล";
+            document.getElementById('usage-cancel-btn').classList.remove('hidden');
+            window.scrollTo({ top: form.offsetTop - 20, behavior: 'smooth' });
+        };
+
+        window.cancelEditUsage = () => {
+            const form = document.getElementById('usage-form');
+            form.reset();
+            document.getElementById('editingUsageId').value = '';
+            document.getElementById('usage-item-entries').innerHTML = `
+             <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                <input type="text" placeholder="สูตรที่ใช้ผลิต" class="w-full md:col-span-2" required>
+                <select class="w-full">
+                    <option value="">เลือกขนาด</option>
+                    <option value="4 ออนซ์">4 ออนซ์</option>
+                    <option value="8 ออนซ์">8 ออนซ์</option>
+                    <option value="16 ออนซ์">16 ออนซ์</option>
+                    <option value="24 ออนซ์">24 ออนซ์</option>
+                    <option value="ถุง">ถุง</option>
+                </select>
+                <div class="flex items-center gap-2">
+                    <input type="number" placeholder="จำนวน" class="w-full" required>
+                </div>
+            </div>`;
+            document.getElementById('usage-waste-entries').innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                <select class="w-full md:col-span-2 waste-formula-select" required>
+                    <option value="">เลือกสูตร</option>
+                </select>
+                <select class="w-full waste-reason-select" required>
+                    <option value="">เลือกสาเหตุ</option>
+                    <option value="เหลว">เหลว</option>
+                    <option value="ขวดไม่สะอาด">ขวดไม่สะอาด</option>
+                    <option value="ฝาไม่สะอาด">ฝาไม่สะอาด</option>
+                    <option value="เป็นรา">เป็นรา</option>
+                    <option value="ปนเปื้อน">ปนเปื้อน</option>
+                    <option value="ขวดแตก">ขวดแตก</option>
+                    <option value="ฝาแตก">ฝาแตก</option>
+                    <option value="หมดอายุ">หมดอายุ</option>
+                    <option value="ขวดเปล่า">ขวดเปล่า</option>
+                </select>
+                <input type="number" placeholder="จำนวน" class="w-full" required>
+            </div>`;
+            document.getElementById('usage-submit-btn').textContent = "บันทึกการใช้งาน";
+            document.getElementById('usage-cancel-btn').classList.add('hidden');
+        };
+        
+        async function initializeAppWithData() {
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/customChemicals`), (snapshot) => {
+                customChemicals = new Set(snapshot.docs.map(doc => doc.id));
+                updateAllCalculations();
+            });
+
+            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/productions`), orderBy("date", "desc")), (snapshot) => {
+                allProductions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderProductionHistory();
+                updateAllCalculations();
+            });
+
+            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/usages`), orderBy("date", "desc")), (snapshot) => {
+                allUsages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUsageHistory();
+                updateAllCalculations();
+            });
+            
+            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/chemStockTransactions`), orderBy("date", "desc")), (snapshot) => {
+                allChemStockTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderChemStockHistory();
+                updateAllCalculations();
+            });
+
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/ingredientCarryOver`), (snapshot) => {
+                ingredientCarryOver = {};
+                snapshot.docs.forEach(doc => { ingredientCarryOver[doc.id] = doc.data(); });
+                updateAllCalculations();
+            });
+
+             onSnapshot(collection(db, `artifacts/${appId}/public/data/foodCarryOver`), (snapshot) => {
+                foodCarryOver = {};
+                snapshot.docs.forEach(doc => { 
+                    const data = doc.data();
+                    const key = data.displayName || doc.id.replace(/__SLASH__/g, '/');
+                    foodCarryOver[key] = data;
+                });
+                updateAllCalculations();
+            });
+
+            onSnapshot(collection(db, `artifacts/${appId}/public/data/chemCarryOver`), (snapshot) => {
+                chemCarryOver = {};
+                snapshot.docs.forEach(doc => { chemCarryOver[doc.id] = doc.data(); });
+                updateAllCalculations();
+            });
+        }
+        
+        function updateAllCalculations() {
+            updateDashboard();
+            updateIngredientStockTable();
+            updateFoodStockTable(); 
+            updateChemStockSummaryTable();
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+             try {
+                await signInAnonymously(auth);
+                console.log("Signed in anonymously.");
+                userId = auth.currentUser.uid;
+                initializeAppWithData();
+
+                const filterConfigs = [
+                    { prefix: 'dashboard', stateSetter: (val) => dashboardFilter = val, updateFunc: updateDashboard },
+                    { prefix: 'food-stock', stateSetter: (val) => foodStockFilter = val, updateFunc: updateFoodStockTable },
+                    { prefix: 'chem-stock', stateSetter: (val) => chemStockFilter = val, updateFunc: updateChemStockSummaryTable },
+                    { prefix: 'ingredient-stock', stateSetter: (val) => ingredientStockFilter = val, updateFunc: updateIngredientStockTable },
+                ];
+
+                filterConfigs.forEach(config => {
+                    const pageId = config.prefix.replace('-stock', 'Stock');
+                    const container = document.getElementById(pageId);
+                     if (!container) return;
+                    
+                    const filterButtons = container.querySelectorAll(`[id^='${config.prefix}-filter-']`);
+                    if (filterButtons.length > 0) {
+                        filterButtons.forEach(button => {
+                            button.addEventListener('click', () => {
+                                const filterType = button.id.split('-').pop();
+                                config.stateSetter(filterType);
+                                
+                                filterButtons.forEach(btn => btn.classList.remove('active'));
+                                button.classList.add('active');
+                                
+                                config.updateFunc();
+                            });
+                        });
+                    }
+                });
+
+
+                 document.getElementById('usage-item-entries').addEventListener('input', updateWasteFormulaOptions);
+                 document.getElementById('usage-item-entries').addEventListener('click', (e) => {
+                    if (e.target.matches('button')) {
+                        setTimeout(updateWasteFormulaOptions, 50);
+                    }
+                });
+            } catch (error) {
+                console.error("Anonymous sign-in failed: ", error);
+            }
+        });
+        
+    </script>
+</body>
+</html>
+
